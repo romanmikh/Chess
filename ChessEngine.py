@@ -414,7 +414,7 @@ class GameState():
         '''
         All moves that consider checks (can't know until I know all possible next moves, checking for checks). Filters.
         '''
-        # TODO decide on the valid moves function - efficiency vs compleness
+        # TODO decide on the valid moves function - efficiency vs completeness
         # temp_en_passant = self.en_passant_is_poss  # our copy, tuples are immutable
         # temp_castle_rights = CastleRights(self.current_castling_right.wks, self.current_castling_right.bks,
         #                                         self.current_castling_right.wqs, self.current_castling_right.bqs)  #copy the current castling
