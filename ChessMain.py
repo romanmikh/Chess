@@ -15,26 +15,28 @@ SQ_SIZE = WIDTH//DIMENSION
 MAX_FPS = 15  # for animation later
 IMAGES = {}
 
-'''
-Only load images once, it's an expensive task:
-Initialize global dictionary of images. 
-'''
+
 
 def load_images():
-    directory = '/Users/roman/Python Shiz/unpack later/Personal Mess/Chess/Chess/images'
+    '''
+    Only load images once, it's an expensive task.
+    Initialize global dictionary of images.
+    '''
+    directory = '/Users/roman/Python Shiz/GitHub_Reps/Chess/Chess/images'
     for image in os.listdir(directory):
         if not image.startswith('.DS_Store'):
             IMAGES[image] = p.transform.scale(p.image.load("images/" + image), (SQ_SIZE, SQ_SIZE))
     # we can now use images using IMAGES[image]
 
-'''
-This will be our main driver and handle user input and update graphics
-'''
+
 def main():
+    '''
+    This will be our main driver and handle user input and update graphics
+    '''
     p.init()
     screen = p.display.set_mode((WIDTH, HEIGHT))
     clock = p.time.Clock()
-    screen.fill(p.Color("green"))  # fill screen with background colour, can delete later on
+    screen.fill(p.Color("green"))  # fill screen with background l, can delete later on
 
     gs = ChessEngine.GameState()  # this will initialise the constructor and creates (board, ToMove and log) variables
     valid_moves = gs.get_valid_moves()
@@ -80,47 +82,103 @@ def main():
                     move_made = True
 
         if move_made:
+            animation(gs.moveLog[-1], screen, gs.board, clock)
             valid_moves = gs.get_valid_moves()  # generate new valid moves, only when a valid move is made
             move_made = False
 
-        draw_game_state(screen, gs)
+        draw_game_state(screen, gs, valid_moves, sq_selected)
         clock.tick(MAX_FPS)
         p.display.flip()
     print(gs.board)
 
-'''
-Responsible for all graphics within a current game state
-'''
 
 
-def draw_game_state(screen, gs):
+
+
+def highlight(screen, gs, valid_moves, sq_selected):
+    '''
+    Highlight selected square and possible move squres
+    '''
+    if sq_selected != ():
+        r, c = sq_selected
+        if gs.board[r][c][0] == ('w' if gs.white_to_move else 'b'): # nested. Making sure that selected square can be moved
+            s = p.Surface((SQ_SIZE, SQ_SIZE))  # double brackets since surface takes (x, y) coordinates
+            s.set_alpha(100) # 0 is transparent, 255 is opaque
+            s.fill(p.Color('green'))
+            screen.blit(s, (c*SQ_SIZE, r*SQ_SIZE))
+            # highlighting poss destination squares
+            s.fill(p.Color('blue'))
+            for move in valid_moves:
+                if move.start_row == r and move.start_col == c:
+                    screen.blit(s, (move.end_col * SQ_SIZE, move.end_row * SQ_SIZE))  # input format is (y, x)
+
+
+
+def draw_game_state(screen, gs, valid_moves, sq_selected):
+    '''
+    Responsible for all graphics within a current game state
+    '''
     draw_board(screen)  # draw squares on board
+    highlight(screen, gs, valid_moves, sq_selected)
     #  add in piece highlighting or move suggestions (red dot?) later
     draw_pieces(screen, gs.board)  # draw pieces on top of squares
 
 
-'''
-Draw the squares on the board. Top left square is always light 
-'''
+
 
 def draw_board(screen):
-    colours = [p.Color("light gray"), p.Color("brown")]
+    '''
+    Draw the squares on the board. Top left square is always light
+    '''
+    global colors
+    colors = [p.Color("light gray"), p.Color("brown")]
     for r in range(DIMENSION):
         for c in range(DIMENSION):
-            colour = colours[((r + c) % 2)]
-            p.draw.rect(screen, colour, p.Rect(c*SQ_SIZE, r*SQ_SIZE, SQ_SIZE, SQ_SIZE))
+            color = colors[((r + c) % 2)]
+            p.draw.rect(screen, color, p.Rect(c*SQ_SIZE, r*SQ_SIZE, SQ_SIZE, SQ_SIZE))
 
 
 
-'''
-Draw the pieces on the board using current GameState.board
-'''
+
 def draw_pieces(screen, board):
+    '''
+    Draw the pieces on the board using current GameState.board
+    '''
     for r in range(DIMENSION):
         for c in range(DIMENSION):
             piece = str(board[r][c]) + '.png'
             if piece != '--.png':  # not empty square
                 screen.blit(IMAGES[piece], p.Rect(c*SQ_SIZE, r*SQ_SIZE, SQ_SIZE, SQ_SIZE))
+
+
+
+def animation(move, screen, board, clock):
+    '''
+    Animate piece movement. It'd be more efficient to redraw only the relevant section. But the move animations are
+    low rendering and don't occur for a lot of the time the code runs, this is ok.
+    '''
+    global colors
+    d_row = move.end_row - move.start_row
+    d_col = move.end_col - move.start_col
+    frames_per_square = 10
+    frame_count = (abs(d_row) + abs(d_col)) * frames_per_square
+    for frame in range(frame_count + 1):  # +1 to take us to the end of the move
+        # (r, c), deciding fractional change in separate frames
+        r, c = (move.start_row + d_row*frame/frame_count, move.start_col + d_col*frame/frame_count)
+        draw_board(screen)
+        draw_pieces(screen, board)
+        # erase the piece immediately moved to its ending square por defecto
+        color = colors[(move.end_row + move.end_col)%2]
+        end_square = p.Rect(move.end_col*SQ_SIZE, move.end_row*SQ_SIZE, SQ_SIZE, SQ_SIZE)
+        p.draw.rect(screen, color, end_square)
+        # draw captured piece onto rectangle
+        if move.piece_captured != '--':
+            screen.blit(IMAGES[move.piece_captured], end_square)
+        # draw moving piece
+        screen.blit(IMAGES[move.piece_moved], p.Rect(c*SQ_SIZE, r*SQ_SIZE, SQ_SIZE, SQ_SIZE))  # TODO add .png format
+        # puts it at its location at whatever frame of the animation
+        p.display.flip()
+        clock.tick(80)
 
 
 if __name__ == '__main__':
