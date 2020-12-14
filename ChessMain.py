@@ -12,7 +12,7 @@ p.init()  # may be useless
 WIDTH = HEIGHT = 512  # 400 works too
 DIMENSION = 8  # 8x8
 SQ_SIZE = WIDTH//DIMENSION
-MAX_FPS = 15  # for animation later
+MAX_FPS = 60  # for animation later
 IMAGES = {}
 
 
@@ -41,11 +41,12 @@ def main():
     gs = ChessEngine.GameState()  # this will initialise the constructor and creates (board, ToMove and log) variables
     valid_moves = gs.get_valid_moves()
     move_made = False # flag variable for hwen move is made, so we don't calculate all next moves every time
-
+    animate = False  # Flag variable for hwen we should animate move, can make animation optional altogether with this
     load_images()  # only do this once, before the while loop
     running = True
     sq_selected = ()  # don't want to keep track of row and column, allows global usage of coords. Tracks last click
     player_clicks = []  # tracks clicks, has two tuples [(), ()]
+    game_over = False
 
     while running:
         for e in p.event.get():
@@ -53,40 +54,67 @@ def main():
                 running = False
             # mouse handler
             elif e.type == p.MOUSEBUTTONDOWN:
-                location = p.mouse.get_pos()  # (x, y) coordinates of mouse. if add extra stuff, 5:01 of vid 1
-                col = location[0]//SQ_SIZE
-                row = location[1]//SQ_SIZE  # these need to be integers --> //
-                print(col, row)
-                if sq_selected == (row, col):  # user clicked same square twice
-                    sq_selected = ()  # undo
-                    player_clicks = []  # clears player clicks
-                else:
-                    sq_selected = (row, col)
-                    player_clicks.append(sq_selected)  # append for both 1st and 2nd clicks
-                if len(player_clicks) == 2:
-                    move = ChessEngine.Move(player_clicks[0], player_clicks[1], gs.board)
-                    print(move.get_chess_notation())
-                    # we need to log if the move is en-passant or pawn promotion
-                    for i in range(len(valid_moves)):
-                        if move == valid_moves[i]:
-                            gs.make_move(valid_moves[i])  # having this instead of (move) argument means ENGINE is making the move
-                            move_made = True
-                            sq_selected = ()  # reset user inputs
-                            player_clicks = []
-                    if not move_made:  # invalid move
-                        player_clicks = [sq_selected]  # avoids double clicking issue
+                if not game_over:
+                    location = p.mouse.get_pos()  # (x, y) coordinates of mouse. if add extra stuff, 5:01 of vid 1
+                    col = location[0]//SQ_SIZE
+                    row = location[1]//SQ_SIZE  # these need to be integers --> //
+                    print(col, row)
+                    if sq_selected == (row, col):  # user clicked same square twice
+                        sq_selected = ()  # undo
+                        player_clicks = []  # clears player clicks
+                    else:
+                        sq_selected = (row, col)
+                        player_clicks.append(sq_selected)  # append for both 1st and 2nd clicks
+                    if len(player_clicks) == 2:
+                        move = ChessEngine.Move(player_clicks[0], player_clicks[1], gs.board)
+                        print(move.get_chess_notation())
+                        # we need to log if the move is en-passant or pawn promotion
+                        for i in range(len(valid_moves)):
+                            if move == valid_moves[i]:
+                                gs.make_move(valid_moves[i])  # having this instead of (move) argument means ENGINE is making the move
+                                move_made = True
+                                animate = True
+                                sq_selected = ()  # reset user inputs
+                                player_clicks = []
+                        if not move_made:  # invalid move
+                            player_clicks = [sq_selected]  # avoids double clicking issue
             # key handler
             elif e.type ==p.KEYDOWN:
                 if e.key == p.K_z:  # undo when 'z' is pressed
                     gs.undo_move()
                     move_made = True
+                    animate = False
+                if e.key == p.K_r:  # resets board when 'r' is pressed
+                    gs = ChessEngine.GameState()
+                    valid_moves = gs.get_valid_moves()
+                    sq_selected = ()
+                    player_clicks = []
+                    move_made = False
+                    animate = False
 
         if move_made:
-            animation(gs.moveLog[-1], screen, gs.board, clock)
+            if animate:
+                animation(gs.moveLog[-1], screen, gs.board, clock)
             valid_moves = gs.get_valid_moves()  # generate new valid moves, only when a valid move is made
             move_made = False
+            animate = False
 
         draw_game_state(screen, gs, valid_moves, sq_selected)
+        # after w draw our gamestate we check if game is over
+        if gs.checkmate == True:  # == True is unnecessary
+            game_over = True
+            if gs.white_to_move:
+                draw_text(screen, 'Black wins by checkm8')
+            else:
+                draw_text(screen, 'White wins by checkm8')
+
+        if gs.stalemate:
+            game_over = True
+            if gs.white_to_move:
+                draw_text(screen, 'Black wins by stalem8')
+            else:
+                draw_text(screen, 'White wins by stalem8')
+
         clock.tick(MAX_FPS)
         p.display.flip()
     print(gs.board)
@@ -173,12 +201,22 @@ def animation(move, screen, board, clock):
         p.draw.rect(screen, color, end_square)
         # draw captured piece onto rectangle
         if move.piece_captured != '--':
-            screen.blit(IMAGES[move.piece_captured], end_square)
+            screen.blit(IMAGES[move.piece_captured + '.png'], end_square)
         # draw moving piece
-        screen.blit(IMAGES[move.piece_moved], p.Rect(c*SQ_SIZE, r*SQ_SIZE, SQ_SIZE, SQ_SIZE))  # TODO add .png format
+        screen.blit(IMAGES[move.piece_moved + '.png'], p.Rect(c*SQ_SIZE, r*SQ_SIZE, SQ_SIZE, SQ_SIZE)) 
         # puts it at its location at whatever frame of the animation
         p.display.flip()
         clock.tick(80)
+
+
+def draw_text(screen, text):
+    font = p.font.SysFont("Times New Roman", 40, True, False)
+    text_object = font.render(text, 0, p.Color('Green'))
+    text_location = p.Rect(0, 0, WIDTH, HEIGHT).move(WIDTH/2 - text_object.get_width()/2, HEIGHT/2 - text_object.get_height()/2)  # centering text
+    screen.blit(text_object, text_location)
+    text_object = font.render(text, 0, p.Color('Blue'))
+    screen.blit(text_object, text_location.move(2, 2))
+
 
 
 if __name__ == '__main__':
