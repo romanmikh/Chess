@@ -104,9 +104,9 @@ def main():
         if gs.checkmate == True:  # == True is unnecessary
             game_over = True
             if gs.white_to_move:
-                draw_text(screen, 'Black wins by checkm8')
+                draw_text(screen, 'Black wins by checkmate')
             else:
-                draw_text(screen, 'White wins by checkm8')
+                draw_text(screen, 'White wins by checkmate')
 
         if gs.stalemate:
             game_over = True
@@ -203,7 +203,7 @@ def animation(move, screen, board, clock):
         if move.piece_captured != '--':
             screen.blit(IMAGES[move.piece_captured + '.png'], end_square)
         # draw moving piece
-        screen.blit(IMAGES[move.piece_moved + '.png'], p.Rect(c*SQ_SIZE, r*SQ_SIZE, SQ_SIZE, SQ_SIZE)) 
+        screen.blit(IMAGES[move.piece_moved + '.png'], p.Rect(c*SQ_SIZE, r*SQ_SIZE, SQ_SIZE, SQ_SIZE))
         # puts it at its location at whatever frame of the animation
         p.display.flip()
         clock.tick(80)
