@@ -9,7 +9,7 @@ from Chess import ChessEngine
 import os
 
 p.init()  # may be useless
-WIDTH = HEIGHT = 512  # 400 works too
+WIDTH = HEIGHT = 600  # 400 works too
 DIMENSION = 8  # 8x8
 SQ_SIZE = WIDTH//DIMENSION
 MAX_FPS = 60  # for animation later
@@ -188,7 +188,7 @@ def animation(move, screen, board, clock):
     global colors
     d_row = move.end_row - move.start_row
     d_col = move.end_col - move.start_col
-    frames_per_square = 10
+    frames_per_square = 5
     frame_count = (abs(d_row) + abs(d_col)) * frames_per_square
     for frame in range(frame_count + 1):  # +1 to take us to the end of the move
         # (r, c), deciding fractional change in separate frames
@@ -206,7 +206,7 @@ def animation(move, screen, board, clock):
         screen.blit(IMAGES[move.piece_moved + '.png'], p.Rect(c*SQ_SIZE, r*SQ_SIZE, SQ_SIZE, SQ_SIZE))
         # puts it at its location at whatever frame of the animation
         p.display.flip()
-        clock.tick(80)
+        clock.tick(400)
 
 
 def draw_text(screen, text):
