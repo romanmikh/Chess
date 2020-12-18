@@ -84,7 +84,7 @@ class GameState():
         # update castling rights whenever king or rook moves
         self.update_castle_rights(move)
         self.castle_rights_log.append(CastleRights(self.current_castling_right.wks, self.current_castling_right.bks,
-                                                    self.current_castling_right.wqs, self.current_castling_right.bqs))
+                                                self.current_castling_right.wqs, self.current_castling_right.bqs))
         # this allows us to undo move
 
 
@@ -251,17 +251,16 @@ class GameState():
 
         # self.get_castle_moves(r, c, moves, ally_colour)
 
-    def get_castle_moves(self, r, c, moves, ally_colour):
+    def get_castle_moves(self, r, c, moves):
         '''
         Generate all valid castle moves for the king at (r,c) then add them to the list
         '''
-        in_check = self.square_under_attack(r, c, ally_colour)
-        if in_check:
+        if self.square_under_attack(r, c):
             print('oof')
             return  # no pasa nada, can't castle when in check
-        if (self.white_to_move and self.current_castle_rights.wks) or (not self.white_to_move and self.current_castle_rights.bks):
+        if (self.white_to_move and self.current_castling_right.wks) or (not self.white_to_move and self.current_castling_right.bks):
             self.get_kingside_castle_moves(r, c, moves)
-        if (self.white_to_move and self.current_castle_rights.wqs) or (not self.white_to_move and self.current_castle_rights.bqs):
+        if (self.white_to_move and self.current_castling_right.wqs) or (not self.white_to_move and self.current_castling_right.bqs):
             self.get_queenside_castle_moves(r, c, moves)
 
 
@@ -406,7 +405,7 @@ class GameState():
         # TODO decide on the valid moves function - efficiency vs completeness
         temp_en_passant = self.en_passant_is_poss  # our copy, tuples are immutable
         temp_castle_rights = CastleRights(self.current_castling_right.wks, self.current_castling_right.bks,
-                                                self.current_castling_right.wqs, self.current_castling_right.bqs)  #copy the current castling
+                                          self.current_castling_right.wqs, self.current_castling_right.bqs)  #copy the current castling
         # NAIVE WAY
         # 1. generate all poss moves
         moves = self.get_poss_moves()
@@ -434,6 +433,11 @@ class GameState():
         # else:
         #     self.checkmate = False
         #     self.stalemate = False  # if we undo after checkmate, they will now be false again
+
+        if self.white_to_move:
+            self.get_castle_moves(self.white_king_loc[0], self.white_king_loc[1], moves)
+        else:
+            self.get_castle_moves(self.black_king_loc[0], self.black_king_loc[1], moves)
 
         self.current_castling_right = temp_castle_rights
         self.en_passant_is_poss = temp_en_passant  # resets. This is to save the value for when we generate moves. only for native way
@@ -568,7 +572,7 @@ class GameState():
         else:
             return self.square_under_attack(self.black_king_loc[0], self.black_king_loc[1])
 
-    def square_under_attack(self, r, c, ally_colour):
+    def square_under_attack(self, r, c):
         '''
         Determine if square (r, c) can be attacked by opponent
         '''
