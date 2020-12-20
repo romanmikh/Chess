@@ -54,7 +54,7 @@ def main():
                     location = p.mouse.get_pos()  # (x, y) coordinates of mouse. if add extra stuff, 5:01 of vid 1
                     col = location[0] // SQ_LENGTH
                     row = location[1] // SQ_LENGTH  # row & col need to be integers --> '//'
-                    print(col, row)
+                    # print(col, row)
                     if sq_selected == (row, col):  # user clicked on same square twice
                         sq_selected = ()  # undo
                         player_clicks = []  # clears player clicks
