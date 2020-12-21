@@ -526,72 +526,74 @@ class GameState:
         # # self.get_castle_moves(r, c, moves, ally_colour)
         # return moves
 
-    # def check_for_pins_and_checks(self):
-    #     '''
-    #     If player is in check, returns list of pins and checks
-    #     '''
-    #     pins = []
-    #     checks = []
-    #     in_check = False
-    #     if self.white_to_move:
-    #         enemy_colour = 'b'
-    #         ally_colour = 'w'
-    #         start_row = self.white_king_loc[0]
-    #         start_col = self.white_king_loc[1]
-    #     else:
-    #         enemy_colour = 'w'
-    #         ally_colour = 'b'
-    #         start_row = self.black_king_loc[0]
-    #         start_col = self.black_king_loc[1]
-    #     # check outwards from king for pins and checks, trakcing pins. ASTERISK
-    #     directions = ((-1, 0), (0, -1), (1, 0), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1))  # rook, then bishop
-    #     for j in range(len(directions)):
-    #         d = directions[j]
-    #         poss_pin = ()  # resets possible pins
-    #         for i in range(1, 8):
-    #             end_row = start_row + d[0] * i
-    #             end_col = start_col + d[1] * i
-    #             if 0 <= end_row < 8 and 0 <= end_col < 8:
-    #                 end_piece = self.board[end_row][end_col]
-    #                 if end_piece[0] == ally_colour and end_piece[1] != 'K':  # phantom king
-    #                     if poss_pin == ():  # 1st allied piece could be pinned
-    #                         poss_pin = (end_row, end_col, d[0], d[1])  # variable not called can indicate indentation errors
-    #                     else:  # 2nd allied piece, no longer pinned and no check poss in this direction
-    #                         break
-    #                 elif end_piece[0] == enemy_colour:
-    #                     type = end_piece[1]  # reaction depends on this
-    #                     # 5 components to this complex conditional
-    #                     # 1) orthogonally from king and enemy piece is a rook
-    #                     # 2) diagonally from king and enemy piece is a bishop
-    #                     # 3) 1 square diagonally from king and and enemy piece is a pawn
-    #                     # 4) any direction and piece is a queen
-    #                     # 5) any direction 1 square away and piece is a king (so king can't move into other king's space
-    #                     if (0 <= j <= 3 and type == 'R') or \
-    #                             (4 <= j <= 7 and type == 'B') or \
-    #                             (i == 1 and type == 'P' and ((enemy_colour == 'w' and 6 <= j <= 7) or (enemy_colour == 'b' and 4 <= j <= 5))) or \
-    #                             (type == 'Q') or (i == 1 and type == 'K'):
-    #                         if poss_pin == ():  # no piece blocking, so check
-    #                             in_check = True
-    #                             checks.append((end_row, end_col, d[0], d[1]))
-    #                             break
-    #                         else:  # piece blocking so pin
-    #                             pins.append(poss_pin)
-    #                             break
-    #                     else:  #piezas enemigas no aplican jaque. Castillo en una diagonal por ejemplo
-    #                         break
-    #             else:  # mirando mas alla de la tabla
-    #                 break
-    #     # buscar jaques de caballos
-    #     knight_moves = ((-2, 1), (-2, -1), (2, 1), (2, -1), (1, 2), (1, -2), (-1, 2), (-1, -2))
-    #     for m in knight_moves:
-    #         end_row = start_row + m[0]
-    #         end_col = start_col + m[1]
-    #         if 0 <= end_row < 8 and 0 <= end_col < 8:
-    #             end_piece = self.board[end_row][end_col]
-    #             if end_piece[0] == enemy_colour and end_piece[1] == 'N':  # caballo enemigo ataca el rey
-    #                 in_check = True
-    #                 checks.append((end_row, end_col, m[0], m[1]))
-    #     return in_check, pins, checks
+
+    # TODO decide which mechanism to use for pins and checks, currently the king ignores checks
+    def check_for_pins_and_checks(self):
+        '''
+        If player is in check, returns list of pins and checks
+        '''
+        pins = []
+        checks = []
+        in_check = False
+        if self.white_to_move:
+            enemy_colour = 'b'
+            ally_colour = 'w'
+            start_row = self.white_king_loc[0]
+            start_col = self.white_king_loc[1]
+        else:
+            enemy_colour = 'w'
+            ally_colour = 'b'
+            start_row = self.black_king_loc[0]
+            start_col = self.black_king_loc[1]
+        # check outwards from king for pins and checks, trakcing pins. ASTERISK
+        directions = ((-1, 0), (0, -1), (1, 0), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1))  # rook, then bishop
+        for j in range(len(directions)):
+            d = directions[j]
+            poss_pin = ()  # resets possible pins
+            for i in range(1, 8):
+                end_row = start_row + d[0] * i
+                end_col = start_col + d[1] * i
+                if 0 <= end_row < 8 and 0 <= end_col < 8:
+                    end_piece = self.board[end_row][end_col]
+                    if end_piece[0] == ally_colour and end_piece[1] != 'K':  # phantom king
+                        if poss_pin == ():  # 1st allied piece could be pinned
+                            poss_pin = (end_row, end_col, d[0], d[1])  # variable not called can indicate indentation errors
+                        else:  # 2nd allied piece, no longer pinned and no check poss in this direction
+                            break
+                    elif end_piece[0] == enemy_colour:
+                        type = end_piece[1]  # reaction depends on this
+                        # 5 components to this complex conditional
+                        # 1) orthogonally from king and enemy piece is a rook
+                        # 2) diagonally from king and enemy piece is a bishop
+                        # 3) 1 square diagonally from king and and enemy piece is a pawn
+                        # 4) any direction and piece is a queen
+                        # 5) any direction 1 square away and piece is a king (so king can't move into other king's space
+                        if (0 <= j <= 3 and type == 'R') or \
+                                (4 <= j <= 7 and type == 'B') or \
+                                (i == 1 and type == 'P' and ((enemy_colour == 'w' and 6 <= j <= 7) or (enemy_colour == 'b' and 4 <= j <= 5))) or \
+                                (type == 'Q') or (i == 1 and type == 'K'):
+                            if poss_pin == ():  # no piece blocking, so check
+                                in_check = True
+                                checks.append((end_row, end_col, d[0], d[1]))
+                                break
+                            else:  # piece blocking so pin
+                                pins.append(poss_pin)
+                                break
+                        else:  #piezas enemigas no aplican jaque. Castillo en una diagonal por ejemplo
+                            break
+                else:  # mirando mas alla de la tabla
+                    break
+        # buscar jaques de caballos
+        knight_moves = ((-2, 1), (-2, -1), (2, 1), (2, -1), (1, 2), (1, -2), (-1, 2), (-1, -2))
+        for m in knight_moves:
+            end_row = start_row + m[0]
+            end_col = start_col + m[1]
+            if 0 <= end_row < 8 and 0 <= end_col < 8:
+                end_piece = self.board[end_row][end_col]
+                if end_piece[0] == enemy_colour and end_piece[1] == 'N':  # caballo enemigo ataca el rey
+                    in_check = True
+                    checks.append((end_row, end_col, m[0], m[1]))
+        return in_check, pins, checks
 
     def in_check(self):  # could put this into get_valid_moves but having it as a separate func allows usage elsewhere
         '''
