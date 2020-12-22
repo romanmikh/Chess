@@ -35,10 +35,10 @@ class Move:  # nested classes could be used, though it is bad practice
 
         # neatly giving a base-4 move an ID, which is later used in overriding the equals method. Java 'hash function'
         self.moveID = self.start_row * 1000 + self.start_col * 100 + self.end_row * 10 + self.end_col
-        self.is_pawn_promotion = is_pawn_promotion
+        self.is_pawn_promotion = (self.piece_moved == 'wP' and self.end_row == 0) or (self.piece_moved == 'bP' and self.end_row == 7)
         self.is_castle_move = is_castle_move
         self.enPassant = is_en_passant
-        if is_en_passant:
+        if self.enPassant:
             self.piece_captured = 'bP' if self.piece_moved == 'wP' else 'wP'
 
     def __eq__(self, other):
@@ -119,8 +119,8 @@ class GameState:
 
         # pawn promotion
         if move.is_pawn_promotion:
-            promoted_piece = input('Choose Q, R, B or N:')  # TODO make this part of UI later, maybe a popup
-            self.board[move.end_row][move.end_col] = move.piece_moved[0] + promoted_piece
+            # promoted_piece = input('Choose Q, R, B or N:')  # TODO make this part of UI later, maybe a popup
+            self.board[move.end_row][move.end_col] = move.piece_moved[0] + 'Q'
 
         # castle move
         if move.is_castle_move:
@@ -155,7 +155,7 @@ class GameState:
 
             # undo en-passant move
             if move.enPassant:
-                self.board[move.end_row][move.end_col] = '--'  # leave landing square blank. Remove pawn that was added to the wrong square
+                self.board[move.end_row][move.end_col] = '--'  # leave landing square blank
                 self.board[move.start_row][move.end_col] = move.piece_captured  # puts pawn back in correct square it was captured from
                 self.en_passant_is_poss = (move.end_row, move.end_col)  # crucial - allows enpassant to happen in next move
             # undo 2 square pawn advance
@@ -178,7 +178,7 @@ class GameState:
 
     def get_poss_moves(self):
         '''
-        All moves without considering checks ( possible moves )
+        All moves without considering checks (possible moves)
         '''
         moves = []
         for r in range(len(self.board)):  # go through board by row and column
@@ -297,15 +297,15 @@ class GameState:
         '''
         Get rook moves for rook located at r, c and add these moves to the list
         '''
-        piece_pinned = False
-        pin_direction = ()
-        for i in range(len(self.pins) - 1, -1, -1):
-            if self.pins[i][0] == r and self.pins[i][1] == c:
-                piece_pinned = True
-                pin_direction = (self.pins[i][2], self.pins[i][3])
-                if self.board[r][c][1] != 'Q':  # can't remoce queen from pin on rook moves, only on bishop moves
-                    self.pins.remove(self.pins[i])  # TODO comment this to see the difference in bamboozle chess
-                break
+        # piece_pinned = False
+        # pin_direction = ()
+        # for i in range(len(self.pins) - 1, -1, -1):
+        #     if self.pins[i][0] == r and self.pins[i][1] == c:
+        #         piece_pinned = True
+        #         pin_direction = (self.pins[i][2], self.pins[i][3])
+        #         if self.board[r][c][1] != 'Q':  # can't remoce queen from pin on rook moves, only on bishop moves
+        #             self.pins.remove(self.pins[i])  # TODO comment this to see the difference in bamboozle chess
+        #         break
 
         directions = ((0, 1), (0, -1), (1, 0), (-1, 0))
         enemy_colour = 'b' if self.white_to_move else 'w'
@@ -314,15 +314,15 @@ class GameState:
                 end_row = r + d[0] * step
                 end_col = c + d[1] * step
                 if 0 <= end_row < 8 and 0 <= end_col < 8:  # we are on the board
-                    if not piece_pinned or pin_direction == d or pin_direction == (-d[0], -d[1]):
-                        end_piece = self.board[end_row][end_col]
-                        if end_piece == '--':
-                            moves.append(Move((r, c), (end_row, end_col), self.board))
-                        elif end_piece[0] == enemy_colour:
-                            moves.append(Move((r, c), (end_row, end_col), self.board))
-                            break  # comment out and rooks can jump over ENEMY pieces only
-                        else:  # own colour piece
-                            break
+                    # if not piece_pinned or pin_direction == d or pin_direction == (-d[0], -d[1]):
+                    end_piece = self.board[end_row][end_col]
+                    if end_piece == '--':
+                        moves.append(Move((r, c), (end_row, end_col), self.board))
+                    elif end_piece[0] == enemy_colour:
+                        moves.append(Move((r, c), (end_row, end_col), self.board))
+                        break  # comment out and rooks can jump over ENEMY pieces only
+                    else:  # own colour piece
+                        break
                 else:  # fall off board
                     break
 
@@ -330,14 +330,14 @@ class GameState:
         '''
         Get bishop moves for bishop located at r, c and add these moves to the list
         '''
-        piece_pinned = False
-        pin_direction = ()
-        for i in range(len(self.pins) - 1, -1, -1):
-            if self.pins[i][0] == r and self.pins[i][1] == c:
-                piece_pinned = True
-                pin_direction = (self.pins[i][2], self.pins[i][3])
-                self.pins.remove(self.pins[i])  # comment this to see the difference in bamboozle
-                break
+        # piece_pinned = False
+        # pin_direction = ()
+        # for i in range(len(self.pins) - 1, -1, -1):
+        #     if self.pins[i][0] == r and self.pins[i][1] == c:
+        #         piece_pinned = True
+        #         pin_direction = (self.pins[i][2], self.pins[i][3])
+        #         self.pins.remove(self.pins[i])  # comment this to see the difference in bamboozle
+        #         break
         directions = ((1, 1), (-1, -1), (1, -1), (-1, 1))
         enemy_colour = 'b' if self.white_to_move else 'w'
         for d in directions:
@@ -345,15 +345,15 @@ class GameState:
                 end_row = r + d[0] * step
                 end_col = c + d[1] * step
                 if 0 <= end_row < 8 and 0 <= end_col < 8:  # we are on the board
-                    if not piece_pinned or pin_direction == d or pin_direction == (-d[0], -d[1]):
-                        end_piece = self.board[end_row][end_col]
-                        if end_piece == '--':
-                            moves.append(Move((r, c), (end_row, end_col), self.board))
-                        elif end_piece[0] == enemy_colour:
-                            moves.append(Move((r, c), (end_row, end_col), self.board))
-                            break  # comment out and bishop can jump over ENEMY pieces only
-                        else:  # own colour piece
-                            break
+                    # if not piece_pinned or pin_direction == d or pin_direction == (-d[0], -d[1]):
+                    end_piece = self.board[end_row][end_col]
+                    if end_piece == '--':
+                        moves.append(Move((r, c), (end_row, end_col), self.board))
+                    elif end_piece[0] == enemy_colour:
+                        moves.append(Move((r, c), (end_row, end_col), self.board))
+                        break  # comment out and bishop can jump over ENEMY pieces only
+                    else:  # own colour piece
+                        break
                 else:  # fall off board
                     break
 
@@ -361,12 +361,12 @@ class GameState:
         '''
         Get knight moves for knight located at r, c and add these moves to the list
         '''
-        piece_pinned = False
-        for i in range(len(self.pins) - 1, -1, -1):
-            if self.pins[i][0] == r and self.pins[i][1] == c:
-                piece_pinned = True
-                self.pins.remove(self.pins[i])  # comment this to see the difference in bamboozle
-                break
+        # piece_pinned = False
+        # for i in range(len(self.pins) - 1, -1, -1):
+        #     if self.pins[i][0] == r and self.pins[i][1] == c:
+        #         piece_pinned = True
+        #         self.pins.remove(self.pins[i])  # comment this to see the difference in bamboozle
+        #         break
 
         destinations = ((2, 1), (2, -1), (-2, -1), (-2, 1), (1, -2), (1, 2), (-1, 2), (-1, -2))
         ally_colour = 'w' if self.white_to_move else 'b'
@@ -374,10 +374,10 @@ class GameState:
             end_row = r + d[0]
             end_col = c + d[1]
             if 0 <= end_row < 8 and 0 <= end_col < 8:  # we are on the board
-                if not piece_pinned:
-                    end_piece = self.board[end_row][end_col]
-                    if end_piece[0] != ally_colour:
-                        moves.append(Move((r, c), (end_row, end_col), self.board))
+                # if not piece_pinned:
+                end_piece = self.board[end_row][end_col]
+                if end_piece[0] != ally_colour:
+                    moves.append(Move((r, c), (end_row, end_col), self.board))
 
     def get_queen_moves(self, r, c, moves):
         '''
@@ -393,11 +393,9 @@ class GameState:
         if self.square_under_attack(r, c):
             print('oof')
             return  # no pasa nada, can't castle when in check
-        if (self.white_to_move and self.current_castling_right.wks) or (
-                not self.white_to_move and self.current_castling_right.bks):
+        if (self.white_to_move and self.current_castling_right.wks) or (not self.white_to_move and self.current_castling_right.bks):
             self.get_kingside_castle_moves(r, c, moves)
-        if (self.white_to_move and self.current_castling_right.wqs) or (
-                not self.white_to_move and self.current_castling_right.bqs):
+        if (self.white_to_move and self.current_castling_right.wqs) or (not self.white_to_move and self.current_castling_right.bqs):
             self.get_queenside_castle_moves(r, c, moves)
 
     def get_kingside_castle_moves(self, r, c, moves):
@@ -528,81 +526,72 @@ class GameState:
 
 
     # TODO decide which mechanism to use for pins and checks, currently the king ignores checks
-    def check_for_pins_and_checks(self):
-        '''
-        If player is in check, returns list of pins and checks
-        '''
-        pins = []
-        checks = []
-        in_check = False
-        if self.white_to_move:
-            enemy_colour = 'b'
-            ally_colour = 'w'
-            start_row = self.white_king_loc[0]
-            start_col = self.white_king_loc[1]
-        else:
-            enemy_colour = 'w'
-            ally_colour = 'b'
-            start_row = self.black_king_loc[0]
-            start_col = self.black_king_loc[1]
-        # check outwards from king for pins and checks, trakcing pins. ASTERISK
-        directions = ((-1, 0), (0, -1), (1, 0), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1))  # rook, then bishop
-        for j in range(len(directions)):
-            d = directions[j]
-            poss_pin = ()  # resets possible pins
-            for i in range(1, 8):
-                end_row = start_row + d[0] * i
-                end_col = start_col + d[1] * i
-                if 0 <= end_row < 8 and 0 <= end_col < 8:
-                    end_piece = self.board[end_row][end_col]
-                    if end_piece[0] == ally_colour and end_piece[1] != 'K':  # phantom king
-                        if poss_pin == ():  # 1st allied piece could be pinned
-                            poss_pin = (end_row, end_col, d[0], d[1])  # variable not called can indicate indentation errors
-                        else:  # 2nd allied piece, no longer pinned and no check poss in this direction
-                            break
-                    elif end_piece[0] == enemy_colour:
-                        type = end_piece[1]  # reaction depends on this
-                        # 5 components to this complex conditional
-                        # 1) orthogonally from king and enemy piece is a rook
-                        # 2) diagonally from king and enemy piece is a bishop
-                        # 3) 1 square diagonally from king and and enemy piece is a pawn
-                        # 4) any direction and piece is a queen
-                        # 5) any direction 1 square away and piece is a king (so king can't move into other king's space
-                        if (0 <= j <= 3 and type == 'R') or \
-                                (4 <= j <= 7 and type == 'B') or \
-                                (i == 1 and type == 'P' and ((enemy_colour == 'w' and 6 <= j <= 7) or (enemy_colour == 'b' and 4 <= j <= 5))) or \
-                                (type == 'Q') or (i == 1 and type == 'K'):
-                            if poss_pin == ():  # no piece blocking, so check
-                                in_check = True
-                                checks.append((end_row, end_col, d[0], d[1]))
-                                break
-                            else:  # piece blocking so pin
-                                pins.append(poss_pin)
-                                break
-                        else:  #piezas enemigas no aplican jaque. Castillo en una diagonal por ejemplo
-                            break
-                else:  # mirando mas alla de la tabla
-                    break
-        # buscar jaques de caballos
-        knight_moves = ((-2, 1), (-2, -1), (2, 1), (2, -1), (1, 2), (1, -2), (-1, 2), (-1, -2))
-        for m in knight_moves:
-            end_row = start_row + m[0]
-            end_col = start_col + m[1]
-            if 0 <= end_row < 8 and 0 <= end_col < 8:
-                end_piece = self.board[end_row][end_col]
-                if end_piece[0] == enemy_colour and end_piece[1] == 'N':  # caballo enemigo ataca el rey
-                    in_check = True
-                    checks.append((end_row, end_col, m[0], m[1]))
-        return in_check, pins, checks
-
-    def in_check(self):  # could put this into get_valid_moves but having it as a separate func allows usage elsewhere
-        '''
-        Determines if player is in check
-        '''
-        if self.white_to_move:
-            return self.square_under_attack(self.white_king_loc[0], self.white_king_loc[1])
-        else:
-            return self.square_under_attack(self.black_king_loc[0], self.black_king_loc[1])
+    # def check_for_pins_and_checks(self):
+    #     '''
+    #     If player is in check, returns list of pins and checks
+    #     '''
+    #     pins = []
+    #     checks = []
+    #     in_check = False
+    #     if self.white_to_move:
+    #         enemy_colour = 'b'
+    #         ally_colour = 'w'
+    #         start_row = self.white_king_loc[0]
+    #         start_col = self.white_king_loc[1]
+    #     else:
+    #         enemy_colour = 'w'
+    #         ally_colour = 'b'
+    #         start_row = self.black_king_loc[0]
+    #         start_col = self.black_king_loc[1]
+    #     # check outwards from king for pins and checks, trakcing pins. ASTERISK
+    #     directions = ((-1, 0), (0, -1), (1, 0), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1))  # rook, then bishop
+    #     for j in range(len(directions)):
+    #         d = directions[j]
+    #         poss_pin = ()  # resets possible pins
+    #         for i in range(1, 8):
+    #             end_row = start_row + d[0] * i
+    #             end_col = start_col + d[1] * i
+    #             if 0 <= end_row < 8 and 0 <= end_col < 8:
+    #                 end_piece = self.board[end_row][end_col]
+    #                 if end_piece[0] == ally_colour and end_piece[1] != 'K':  # phantom king
+    #                     if poss_pin == ():  # 1st allied piece could be pinned
+    #                         poss_pin = (end_row, end_col, d[0], d[1])  # variable not called can indicate indentation errors
+    #                     else:  # 2nd allied piece, no longer pinned and no check poss in this direction
+    #                         break
+    #                 elif end_piece[0] == enemy_colour:
+    #                     type = end_piece[1]  # reaction depends on this
+    #                     # 5 components to this complex conditional
+    #                     # 1) orthogonally from king and enemy piece is a rook
+    #                     # 2) diagonally from king and enemy piece is a bishop
+    #                     # 3) 1 square diagonally from king and and enemy piece is a pawn
+    #                     # 4) any direction and piece is a queen
+    #                     # 5) any direction 1 square away and piece is a king (so king can't move into other king's space
+    #                     if (0 <= j <= 3 and type == 'R') or \
+    #                             (4 <= j <= 7 and type == 'B') or \
+    #                             (i == 1 and type == 'P' and ((enemy_colour == 'w' and 6 <= j <= 7) or (enemy_colour == 'b' and 4 <= j <= 5))) or \
+    #                             (type == 'Q') or (i == 1 and type == 'K'):
+    #                         if poss_pin == ():  # no piece blocking, so check
+    #                             in_check = True
+    #                             checks.append((end_row, end_col, d[0], d[1]))
+    #                             break
+    #                         else:  # piece blocking so pin
+    #                             pins.append(poss_pin)
+    #                             break
+    #                     else:  #piezas enemigas no aplican jaque. Castillo en una diagonal por ejemplo
+    #                         break
+    #             else:  # mirando mas alla de la tabla
+    #                 break
+    #     # buscar jaques de caballos
+    #     knight_moves = ((-2, 1), (-2, -1), (2, 1), (2, -1), (1, 2), (1, -2), (-1, 2), (-1, -2))
+    #     for m in knight_moves:
+    #         end_row = start_row + m[0]
+    #         end_col = start_col + m[1]
+    #         if 0 <= end_row < 8 and 0 <= end_col < 8:
+    #             end_piece = self.board[end_row][end_col]
+    #             if end_piece[0] == enemy_colour and end_piece[1] == 'N':  # caballo enemigo ataca el rey
+    #                 in_check = True
+    #                 checks.append((end_row, end_col, m[0], m[1]))
+    #     return in_check, pins, checks
 
     def square_under_attack(self, r, c):
         '''
@@ -615,6 +604,15 @@ class GameState:
             if move.end_row == r and move.end_col == c:  # square is under attack
                 return True
         return False
+
+    def in_check(self):  # could put this into get_valid_moves but having it as a separate func allows usage elsewhere
+        '''
+        Determines if player is in check
+        '''
+        if self.white_to_move:
+            return self.square_under_attack(self.white_king_loc[0], self.white_king_loc[1])
+        else:
+            return self.square_under_attack(self.black_king_loc[0], self.black_king_loc[1])
 
 
 class CastleRights:

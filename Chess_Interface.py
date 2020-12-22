@@ -31,8 +31,6 @@ def main():
     p.init()
     screen = p.display.set_mode((WIDTH, HEIGHT))
     clock = p.time.Clock()
-    # screen.fill(p.Color("green"))  # fill screen with background l, can delete later on TODO
-
     gs = Chess_Logic.GameState()  # this will initialise the constructor and creates (board, ToMove and log) variables
     valid_moves = gs.get_valid_moves()
     player_clicks = []  # tracks clicks, takes two tuples [(), ()]
